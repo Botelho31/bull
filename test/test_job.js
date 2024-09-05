@@ -202,6 +202,66 @@ describe('Job', () => {
         });
     });
 
+    it('should allow updating job delay', () => {
+      const newDelayTimestamp = Date.now() + 10000;
+
+      return Job.create(queue, { foo: 'bar' }, { delay: 1000 })
+        .then(job => {
+          return job.isDelayed().then(isDelayed => {
+            expect(isDelayed).to.be.eql(true);
+            return job;
+          })
+        })
+        .then((job) => {
+          return job.updateDelay(newDelayTimestamp).then(() => {
+            return job
+          })
+        })
+        .then(job => {
+          return Job.fromId(queue, job.id).then(job => {
+            const delayFinalTimestamp = job.delay + job.timestamp
+            expect(delayFinalTimestamp).to.be.eql(newDelayTimestamp);
+          });
+        })
+    });
+
+    it('fails to update job delay if job is not already delayed', () => {
+      return Job.create(queue, { foo: 'bar' })
+        .then(job => {
+          return job.isDelayed().then(isDelayed => {
+            expect(isDelayed).to.be.eql(false);
+            return job;
+          })
+        })
+        .then((job) => {
+          return job.updateDelay(Date.now() + 10000).then(() => {
+            return job
+          })
+          .catch(err => {
+            expect(err.message).to.be.eql('Job is no in delayed set');
+          });
+        })
+    });
+
+    it('fails to update job delay if delay is negative', () => {
+      return Job.create(queue, { foo: 'bar' }, { delay: 1000 })
+        .then(job => {
+          return job.isDelayed().then(isDelayed => {
+            expect(isDelayed).to.be.eql(true);
+            return job;
+          })
+        })
+        .then((job) => {
+          return job.updateDelay(Date.now() + -10000).then(() => {
+            return job
+          })
+          .catch(err => {
+            expect(err.message).to.be.eql('Invalid delay timestamp for job ' + job.id);
+          });
+        })
+    });
+
+
     describe('when job was removed', () => {
       it('throws an error', async () => {
         const job = await Job.create(queue, { foo: 'bar' });
