@@ -238,7 +238,7 @@ describe('Job', () => {
             return job
           })
           .catch(err => {
-            expect(err.message).to.be.eql('Job is no in delayed set');
+            expect(err.message).to.be.eql('Job is not in delayed set');
           });
         })
     });
